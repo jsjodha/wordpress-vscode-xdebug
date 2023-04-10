@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  wordpress:
+    container_name: wordpress
+    restart: always
+    build:
+      dockerfile: Dockerfile-6.1.1-php7.4-apache # this line is actually redundant here - you need it only if you want to use some custom name for your Dockerfile
+      context: . # a path to a directory containing a Dockerfile, or a url to a git repository
+    ports:
+      - "80:80"
+    environment:
+      VIRTUAL_HOST: localhost.local,  host.docker.internal
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_NAME: wp
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      # Set the XDEBUG_CONFIG as described here: https://xdebug.org/docs/remote
+      XDEBUG_CONFIG: remote_host=host.docker.internal remote_port=9000 remote_enable=1
+
+    depends_on:
+      - mysql
+
+    volumes:
+      - ./data/wordpress/wp-content:/var/www/html/wp-content
+      - ./data/wordpress/wp-config.php:/var/www/html/wp-config.php
+
+    networks:
+      - wp-xdebug
+
+  mysql:
+    image: mysql:5.7.29
+    container_name: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: wp
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+
+    networks:
+      - wp-xdebug
+
+
+networks:
+  wp-xdebug:
